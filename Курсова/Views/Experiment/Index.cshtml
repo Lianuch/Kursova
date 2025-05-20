@@ -1,0 +1,101 @@
+﻿@model List<Курсова.Models.ExperimentResult>
+
+<h2>Результати експериментів</h2>
+<div style="max-height: 400px; overflow-y: auto;">
+    <table border="1">
+        <tr>
+            <th>№</th>
+            <th>Розмір масиву</th>
+            <th>Час (послідовно)</th>
+            <th>Час (паралельно)</th>
+            <th>Ефективність</th>
+        </tr>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.ExperimentNumber</td>
+                <td>@item.ArraySize</td>
+                <td>@item.SequentialTimeMs.ToString("F6")</td>
+                <td>@item.ParallelTimeMs.ToString("F6")</td>
+                <td>@item.Efficiency.ToString("F2")</td>
+            </tr>
+        }
+    </table>
+</div>
+
+<h3>Графік швидкодії</h3>
+<canvas id="speedChart" width="600" height="400"></canvas>
+
+<h3>Графік ефективності</h3>
+<canvas id="efficiencyChart" width="600" height="400"></canvas>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const data = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.GroupBy(r => r.ArraySize)
+        .Select(g => new
+        {
+            ArraySize = g.Key,
+            AvgSequential = g.Average(r => r.SequentialTimeMs),
+            AvgParallel = g.Average(r => r.ParallelTimeMs)
+        })));
+
+        const ctx = document.getElementById('speedChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.map(d => d.ArraySize),
+                datasets: [
+                    {
+                        label: 'Послідовний',
+                        data: data.map(d => d.AvgSequential),
+                        borderColor: 'blue'
+                    },
+                    {
+                        label: 'Паралельний',
+                        data: data.map(d => d.AvgParallel),
+                        borderColor: 'green'
+                    }
+                ]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Час (мс)'
+                        }
+                    }
+                }
+            }
+        });
+
+        const efficiencyData = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.GroupBy(r => r.ArraySize)
+        .Select(g => new { ArraySize = g.Key, AvgEfficiency = g.Average(r => r.Efficiency) })));
+
+        const ctx2 = document.getElementById('efficiencyChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'line',
+            data: {
+                labels: efficiencyData.map(d => d.ArraySize),
+                datasets: [{
+                    label: 'Ефективність',
+                    data: efficiencyData.map(d => d.AvgEfficiency),
+                    borderColor: 'red'
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Ефективність'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+}
