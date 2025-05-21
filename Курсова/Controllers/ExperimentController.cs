@@ -19,7 +19,7 @@ public class ExperimentController : Controller
         var inputArrays = LoadInputArrays(path);
         var results = new List<ExperimentResult>();
         int experimentNumber = 1;
-        const int repetitions = 10000; // Збільшуємо до 10,000 для точності
+        const int repetitions = 10; 
 
         foreach (var arr in inputArrays)
         {
